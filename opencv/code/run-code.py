@@ -1,4 +1,4 @@
 import cv2
 
-print('opencv version: ')
-cv2.__version_
+if __name__ == "__main__":
+    print("Loaded OpenCV version: {}".format(cv2.__version__))
