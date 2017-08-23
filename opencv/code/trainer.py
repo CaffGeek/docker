@@ -105,7 +105,7 @@ class Trainer(object):
         # Randomly create extra image data by rotating and flipping images
         self.tf_img_aug = ImageAugmentation()
         #self.tf_img_aug.add_random_flip_leftright()
-        self.tf_img_aug.add_random_rotation(max_angle=30.)
+        self.tf_img_aug.add_random_rotation(max_angle=10.)
 
     def setup_nn_network(self):
         print('Setup neural network structure')
@@ -156,17 +156,17 @@ class Trainer(object):
         self.setup_image_preprocessing()
         self.setup_nn_network()
         
-        tf_model = DNN(self.tf_network,
+        self.tf_model = DNN(self.tf_network,
                        tensorboard_verbose=3,
                        checkpoint_path='/checkpoint/model_bowling.tfl.ckpt')
 
-        tf_model.fit(self.tf_x, self.tf_y, n_epoch=100, shuffle=True,
+        self.tf_model.fit(self.tf_x, self.tf_y, n_epoch=100, shuffle=True,
                      validation_set=(self.tf_x_test, self.tf_y_test),
                      show_metric=True, batch_size=96,
                      snapshot_epoch=True,
                      run_id='model_bowling')
 
-        tf_model.save('/output/model/model_bowling.tflearn')
+        self.tf_model.save('/model/model_bowling.tflearn')
 
     def load_model(self, model_path):
         self.setup_nn_network()

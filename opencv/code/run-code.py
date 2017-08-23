@@ -1,16 +1,26 @@
 from trainer import Trainer
 import numpy as np
 
-if __name__ == "__main__":
-    TRAINER = Trainer()
-    # TRAINER.resize('/input', '/output')
-    # TRAINER.train('/output')
-    TRAINER.load_model('/output/model/model_bowling.tflearn')
-    predicted = TRAINER.predict_image('/input/01010/bowling02101.jpg')
-                
-    if np.argmax(predicted[0]) == 0:
-        print ("It's a full rack")
+class App(object):
+    def __init__(self):
+        self.trainer = Trainer()
+        self.trainer.resize('/input', '/output')
+        self.trainer.train('/output')
+        #self.trainer.load_model('/model/model_bowling.tflearn')
+
+    def showResult(self, image):
+        predicted = self.trainer.predict_image(image)
+        if np.argmax(predicted[0]) == 0:
+            print ("{} is a full rack".format(image))
+        else:
+            print ("{} is not a full rack".format(image))
         print (predicted[0])
-    else:
-        print ("It's not a full rack")
-        print (predicted[0])
+
+app = App()
+app.showResult('/input/01010/bowling02101.jpg')
+app.showResult('/input/11100/bowling00701.jpg')
+app.showResult('/input/00000/bowling01051.jpg')
+app.showResult('/input/11111/bowling00101.jpg')
+app.showResult('/misc/dog.jpg')
+app.showResult('/misc/blue.png')
+app.showResult('/misc/black.png')

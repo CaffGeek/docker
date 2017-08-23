@@ -1,0 +1,2 @@
+model_checkpoint_path: "/model/model_bowling.tflearn"
+all_model_checkpoint_paths: "/model/model_bowling.tflearn"
