@@ -185,6 +185,7 @@ class Trainer(object):
 
     def load_model(self, model_path):
         self.init_np_variables()
+        self.setup_image_preprocessing()
         self.setup_nn_network()
         self.tf_model = DNN(self.tf_network, tensorboard_verbose=0)
         self.tf_model.load(model_path)

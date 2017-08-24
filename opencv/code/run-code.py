@@ -8,9 +8,9 @@ init(autoreset=True)
 class App(object):
     def __init__(self):
         self.trainer = Trainer()
-        self.trainer.resize('/input', '/output')
-        self.trainer.train('/output')
-        #self.trainer.load_model('/model/model_bowling.tflearn')
+        #self.trainer.resize('/input', '/output')
+        #self.trainer.train('/output')
+        self.trainer.load_model('/model/model_bowling.tflearn')
 
     def testImage(self, image, expectedLabel):
         predicted = self.trainer.predict_image(image)
