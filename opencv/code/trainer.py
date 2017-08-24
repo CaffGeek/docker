@@ -24,11 +24,12 @@ import scipy
 class Trainer(object):
     def __init__(self):
         self.image_size = 32
-        self.positive_files = []
-        self.negative_files = []
+        # self.positive_files = []
+        # self.negative_files = []
+        self.all_files = []
         self.total_images_count = 0
 
-        self.tf_data_counter = 0        
+        self.tf_data_counter = 0
         self.tf_image_data = None
         self.tf_image_labels = None
         self.tf_x = None
@@ -49,19 +50,16 @@ class Trainer(object):
             for filename in filenames:
                 if not filename.endswith(('.jpg', '.jpeg', '.png')):
                     continue
-                
+
                 label = root.replace('./', '')
                 
-                # open file and resize
                 oldFile = os.path.join(root, filename)
                 im = Image.open(oldFile)
                 im = im.resize(SIZE, Image.ANTIALIAS)
                 
-                # save it
                 newFile = os.path.join(output_path, "{}.{}.jpg".format(label, counter))
                 im.save(newFile, "JPEG", quality=70)
 
-                #print('label: {} - {} saved at {}'.format(label, oldFile, newFile))
                 counter = counter + 1
 
     def build_image_filenames_list(self, train_images_path):
@@ -70,10 +68,12 @@ class Trainer(object):
         all_files.extend(glob.glob('{}/*.jpeg'.format(train_images_path)))
         all_files.extend(glob.glob('{}/*.png'.format(train_images_path)))
 
-        self.positive_files = [fn for fn in all_files if os.path.basename(fn).startswith('11111')]
-        self.negative_files = [fn for fn in all_files if not os.path.basename(fn).startswith('11111')]
-        self.total_images_count = len(self.positive_files) + len(self.negative_files)
-        print('{}:{} processed from {}'.format(len(self.positive_files), len(self.negative_files), train_images_path))
+        # self.positive_files = [fn for fn in all_files if os.path.basename(fn).startswith('11111')]
+        # self.negative_files = [fn for fn in all_files if not os.path.basename(fn).startswith('11111')]
+        # self.total_images_count = len(self.positive_files) + len(self.negative_files)
+        self.all_files = all_files
+        self.total_images_count = len(all_files)
+        # print('{}:{} processed from {}'.format(len(self.positive_files), len(self.negative_files), train_images_path))
 
     def init_np_variables(self):
         print('Init Numpy Variables')
@@ -90,7 +90,6 @@ class Trainer(object):
                 self.tf_data_counter += 1
             except:
                 continue
-        print(self.tf_image_labels)
 
     def process_tf_dataset(self):
         print('Process TensorFlow Data Set')
@@ -99,10 +98,8 @@ class Trainer(object):
             self.tf_image_data, self.tf_image_labels, test_size=0.1, random_state=42)
 
         # encode our labels
-        print('self.tf_y {}'.format(self.tf_y))
-        print('self.tf_y_test {}'.format(self.tf_y_test))
-        self.tf_y = to_categorical(self.tf_y, 2)
-        self.tf_y_test = to_categorical(self.tf_y_test, 2)
+        self.tf_y = to_categorical(self.tf_y, 10)
+        self.tf_y_test = to_categorical(self.tf_y_test, 10)
 
     def setup_image_preprocessing(self):
         print('Setup Image Preprocessing')
@@ -129,7 +126,7 @@ class Trainer(object):
         layer_conv_1 = conv_2d(self.tf_network, 32, 3, activation='relu', name='conv_1')
 
         # layer 2: max pooling layer
-        self.tf_network = max_pool_2d(layer_conv_1, 2)
+        self.tf_network = max_pool_2d(layer_conv_1, 10)
 
         # layer 3: convolution layer with 64 filters
         layer_conv_2 = conv_2d(self.tf_network, 64, 3, activation='relu', name='conv_2')
@@ -138,7 +135,7 @@ class Trainer(object):
         layer_conv_3 = conv_2d(layer_conv_2, 64, 3, activation='relu', name='conv_3')
 
         # layer 5: Max pooling layer
-        self.tf_network = max_pool_2d(layer_conv_3, 2)
+        self.tf_network = max_pool_2d(layer_conv_3, 10)
 
         # layer 6: Fully connected 512 node layer
         self.tf_network = fully_connected(self.tf_network, 512, activation='relu')
@@ -147,7 +144,7 @@ class Trainer(object):
         self.tf_network = dropout(self.tf_network, 0.5)
 
         # layer 8: Fully connected layer with two outputs (pass or fail)
-        self.tf_network = fully_connected(self.tf_network, 2, activation='softmax')
+        self.tf_network = fully_connected(self.tf_network, 10, activation='softmax')
 
         # define how we will be training our network
         accuracy = Accuracy(name="Accuracy")
@@ -159,8 +156,17 @@ class Trainer(object):
         print('Train...')
         self.build_image_filenames_list(train_images_path)
         self.init_np_variables()
-        self.add_tf_dataset(self.positive_files, 0)
-        self.add_tf_dataset(self.negative_files, 1)
+        # self.add_tf_dataset(self.positive_files, 0)
+        # self.add_tf_dataset(self.negative_files, 1)
+        self.add_tf_dataset([fn for fn in self.all_files if os.path.basename(fn).startswith('00000')], 0)# 0)
+        self.add_tf_dataset([fn for fn in self.all_files if os.path.basename(fn).startswith('00111')], 1)# 7)
+        self.add_tf_dataset([fn for fn in self.all_files if os.path.basename(fn).startswith('01010')], 2)# 10)
+        self.add_tf_dataset([fn for fn in self.all_files if os.path.basename(fn).startswith('01011')], 3)# 11)
+        self.add_tf_dataset([fn for fn in self.all_files if os.path.basename(fn).startswith('01111')], 4)# 15)
+        self.add_tf_dataset([fn for fn in self.all_files if os.path.basename(fn).startswith('11011')], 5)# 27)
+        self.add_tf_dataset([fn for fn in self.all_files if os.path.basename(fn).startswith('11100')], 6)# 28)
+        self.add_tf_dataset([fn for fn in self.all_files if os.path.basename(fn).startswith('11111')], 7)# 31)
+        self.add_tf_dataset([fn for fn in self.all_files if os.path.basename(fn).startswith('other')], 8)# 31)
         self.process_tf_dataset()
         self.setup_image_preprocessing()
         self.setup_nn_network()
