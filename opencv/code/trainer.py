@@ -46,7 +46,10 @@ class Trainer(object):
         os.chdir(image_path)
         for root, dirnames, filenames in os.walk('.'):
             counter = 1
-            for filename in fnmatch.filter(filenames, '*.jpg'):
+            for filename in filenames:
+                if not filename.endswith(('.jpg', '.jpeg', '.png')):
+                    continue
+                
                 label = root.replace('./', '')
                 
                 # open file and resize
@@ -64,6 +67,9 @@ class Trainer(object):
     def build_image_filenames_list(self, train_images_path):
         print('Build Image List')
         all_files = glob.glob('{}/*.jpg'.format(train_images_path))
+        all_files.extend(glob.glob('{}/*.jpeg'.format(train_images_path)))
+        all_files.extend(glob.glob('{}/*.png'.format(train_images_path)))
+
         self.positive_files = [fn for fn in all_files if os.path.basename(fn).startswith('11111')]
         self.negative_files = [fn for fn in all_files if not os.path.basename(fn).startswith('11111')]
         self.total_images_count = len(self.positive_files) + len(self.negative_files)
@@ -84,6 +90,7 @@ class Trainer(object):
                 self.tf_data_counter += 1
             except:
                 continue
+        print(self.tf_image_labels)
 
     def process_tf_dataset(self):
         print('Process TensorFlow Data Set')
@@ -92,6 +99,8 @@ class Trainer(object):
             self.tf_image_data, self.tf_image_labels, test_size=0.1, random_state=42)
 
         # encode our labels
+        print('self.tf_y {}'.format(self.tf_y))
+        print('self.tf_y_test {}'.format(self.tf_y_test))
         self.tf_y = to_categorical(self.tf_y, 2)
         self.tf_y_test = to_categorical(self.tf_y_test, 2)
 
@@ -169,6 +178,7 @@ class Trainer(object):
         self.tf_model.save('/model/model_bowling.tflearn')
 
     def load_model(self, model_path):
+        self.init_np_variables()
         self.setup_nn_network()
         self.tf_model = DNN(self.tf_network, tensorboard_verbose=0)
         self.tf_model.load(model_path)
