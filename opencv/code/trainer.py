@@ -1,6 +1,7 @@
 import os
 import fnmatch
 import glob
+import re
 
 from PIL import Image
 
@@ -24,10 +25,14 @@ import scipy
 class Trainer(object):
     def __init__(self):
         self.image_size = 32
-        # self.positive_files = []
-        # self.negative_files = []
         self.all_files = []
         self.total_images_count = 0
+        self.labels = [
+            '00000', '00001', '00010', '00011', '00100', '00101', '00110', 
+            '00111', '01000', '01001', '01010', '01011', '01100', '01101', 
+            '01110', '01111', '10000', '10001', '10010', '10011', '10100', 
+            '10101', '10110', '10111', '11000', '11001', '11010', '11011', 
+            '11100', '11101', '11110', '11111', 'other']
 
         self.tf_data_counter = 0
         self.tf_image_data = None
@@ -48,7 +53,7 @@ class Trainer(object):
         for root, dirnames, filenames in os.walk('.'):
             counter = 1
             for filename in filenames:
-                if not filename.endswith(('.jpg', '.jpeg', '.png')):
+                if not filename.endswith(('.jpg', '.jpeg', '.png')):#, '.PNG')):
                     continue
 
                 label = root.replace('./', '')
@@ -67,26 +72,29 @@ class Trainer(object):
         all_files = glob.glob('{}/*.jpg'.format(train_images_path))
         all_files.extend(glob.glob('{}/*.jpeg'.format(train_images_path)))
         all_files.extend(glob.glob('{}/*.png'.format(train_images_path)))
+        #all_files.extend(glob.glob('{}/*.PNG'.format(train_images_path)))
 
-        # self.positive_files = [fn for fn in all_files if os.path.basename(fn).startswith('11111')]
-        # self.negative_files = [fn for fn in all_files if not os.path.basename(fn).startswith('11111')]
-        # self.total_images_count = len(self.positive_files) + len(self.negative_files)
         self.all_files = all_files
         self.total_images_count = len(all_files)
         # print('{}:{} processed from {}'.format(len(self.positive_files), len(self.negative_files), train_images_path))
+
+    def build_labels(self):
+        print('Extracting Label List')
+        labels = list(map(lambda x: re.findall("^([^\.]+)\..*", x.rsplit('/', 1)[-1])[0], self.all_files))
+        self.labels = reduce(lambda x,y: x+[y] if not y in x else x, labels,[])
 
     def init_np_variables(self):
         print('Init Numpy Variables')
         self.tf_image_data = np.zeros((self.total_images_count, self.image_size, self.image_size, 3), dtype='float64')
         self.tf_image_labels = np.zeros(self.total_images_count)
 
-    def add_tf_dataset(self, list_images, label):
-        print('Add TensorFlow Data Set for {}'.format(label))
+    def add_tf_dataset(self, list_images, labelIndex):
+        print('Add TensorFlow Data Set for {}'.format(self.labels[labelIndex]))
         for image_file in list_images:
             try:
                 img = io.imread(image_file)
                 self.tf_image_data[self.tf_data_counter] = np.array(img)
-                self.tf_image_labels[self.tf_data_counter] = label
+                self.tf_image_labels[self.tf_data_counter] = labelIndex
                 self.tf_data_counter += 1
             except:
                 continue
@@ -98,8 +106,8 @@ class Trainer(object):
             self.tf_image_data, self.tf_image_labels, test_size=0.1, random_state=42)
 
         # encode our labels
-        self.tf_y = to_categorical(self.tf_y, 10)
-        self.tf_y_test = to_categorical(self.tf_y_test, 10)
+        self.tf_y = to_categorical(self.tf_y, len(self.labels))
+        self.tf_y_test = to_categorical(self.tf_y_test, len(self.labels))
 
     def setup_image_preprocessing(self):
         print('Setup Image Preprocessing')
@@ -126,7 +134,7 @@ class Trainer(object):
         layer_conv_1 = conv_2d(self.tf_network, 32, 3, activation='relu', name='conv_1')
 
         # layer 2: max pooling layer
-        self.tf_network = max_pool_2d(layer_conv_1, 10)
+        self.tf_network = max_pool_2d(layer_conv_1, len(self.labels))
 
         # layer 3: convolution layer with 64 filters
         layer_conv_2 = conv_2d(self.tf_network, 64, 3, activation='relu', name='conv_2')
@@ -135,7 +143,7 @@ class Trainer(object):
         layer_conv_3 = conv_2d(layer_conv_2, 64, 3, activation='relu', name='conv_3')
 
         # layer 5: Max pooling layer
-        self.tf_network = max_pool_2d(layer_conv_3, 10)
+        self.tf_network = max_pool_2d(layer_conv_3, len(self.labels))
 
         # layer 6: Fully connected 512 node layer
         self.tf_network = fully_connected(self.tf_network, 512, activation='relu')
@@ -144,7 +152,7 @@ class Trainer(object):
         self.tf_network = dropout(self.tf_network, 0.5)
 
         # layer 8: Fully connected layer with two outputs (pass or fail)
-        self.tf_network = fully_connected(self.tf_network, 10, activation='softmax')
+        self.tf_network = fully_connected(self.tf_network, len(self.labels), activation='softmax')
 
         # define how we will be training our network
         accuracy = Accuracy(name="Accuracy")
@@ -155,18 +163,14 @@ class Trainer(object):
     def train(self, train_images_path):
         print('Train...')
         self.build_image_filenames_list(train_images_path)
+        self.build_labels()
         self.init_np_variables()
-        # self.add_tf_dataset(self.positive_files, 0)
-        # self.add_tf_dataset(self.negative_files, 1)
-        self.add_tf_dataset([fn for fn in self.all_files if os.path.basename(fn).startswith('00000')], 0)# 0)
-        self.add_tf_dataset([fn for fn in self.all_files if os.path.basename(fn).startswith('00111')], 1)# 7)
-        self.add_tf_dataset([fn for fn in self.all_files if os.path.basename(fn).startswith('01010')], 2)# 10)
-        self.add_tf_dataset([fn for fn in self.all_files if os.path.basename(fn).startswith('01011')], 3)# 11)
-        self.add_tf_dataset([fn for fn in self.all_files if os.path.basename(fn).startswith('01111')], 4)# 15)
-        self.add_tf_dataset([fn for fn in self.all_files if os.path.basename(fn).startswith('11011')], 5)# 27)
-        self.add_tf_dataset([fn for fn in self.all_files if os.path.basename(fn).startswith('11100')], 6)# 28)
-        self.add_tf_dataset([fn for fn in self.all_files if os.path.basename(fn).startswith('11111')], 7)# 31)
-        self.add_tf_dataset([fn for fn in self.all_files if os.path.basename(fn).startswith('other')], 8)# 31)
+        for i, label in enumerate(self.labels):
+            files = [fn for fn in self.all_files if os.path.basename(fn).startswith(label)]
+            if len(files) == 0:
+                continue;
+            self.add_tf_dataset(files, i)
+        
         self.process_tf_dataset()
         self.setup_image_preprocessing()
         self.setup_nn_network()
@@ -181,13 +185,15 @@ class Trainer(object):
                      snapshot_epoch=True,
                      run_id='model_bowling')
 
+        #todo: save labels
         self.tf_model.save('/model/model_bowling.tflearn')
 
     def load_model(self, model_path):
         self.init_np_variables()
         self.setup_image_preprocessing()
         self.setup_nn_network()
-        self.tf_model = DNN(self.tf_network, tensorboard_verbose=0)
+        self.tf_model = DNN(self.tf_network, tensorboard_verbose=0)        
+        #todo: load labels
         self.tf_model.load(model_path)
 
     def predict_image(self, image_path):
