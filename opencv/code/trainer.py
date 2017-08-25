@@ -24,7 +24,7 @@ import scipy
 
 class Trainer(object):
     def __init__(self):
-        self.image_size = 64
+        self.image_size = 32
         self.all_files = []
         self.total_images_count = 0
         self.labels = []
