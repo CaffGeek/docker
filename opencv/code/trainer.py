@@ -24,15 +24,10 @@ import scipy
 
 class Trainer(object):
     def __init__(self):
-        self.image_size = 32
+        self.image_size = 64
         self.all_files = []
         self.total_images_count = 0
-        self.labels = [
-            '00000', '00001', '00010', '00011', '00100', '00101', '00110', 
-            '00111', '01000', '01001', '01010', '01011', '01100', '01101', 
-            '01110', '01111', '10000', '10001', '10010', '10011', '10100', 
-            '10101', '10110', '10111', '11000', '11001', '11010', '11011', 
-            '11100', '11101', '11110', '11111', 'other']
+        self.labels = []
 
         self.tf_data_counter = 0
         self.tf_image_data = None
@@ -53,7 +48,7 @@ class Trainer(object):
         for root, dirnames, filenames in os.walk('.'):
             counter = 1
             for filename in filenames:
-                if not filename.endswith(('.jpg', '.jpeg', '.png')):#, '.PNG')):
+                if not filename.endswith(('.jpg', '.jpeg', '.png', '.PNG')):
                     continue
 
                 label = root.replace('./', '')
@@ -72,7 +67,7 @@ class Trainer(object):
         all_files = glob.glob('{}/*.jpg'.format(train_images_path))
         all_files.extend(glob.glob('{}/*.jpeg'.format(train_images_path)))
         all_files.extend(glob.glob('{}/*.png'.format(train_images_path)))
-        #all_files.extend(glob.glob('{}/*.PNG'.format(train_images_path)))
+        all_files.extend(glob.glob('{}/*.PNG'.format(train_images_path)))
 
         self.all_files = all_files
         self.total_images_count = len(all_files)
@@ -198,5 +193,5 @@ class Trainer(object):
 
     def predict_image(self, image_path):
         img = scipy.ndimage.imread(image_path, mode="RGB")
-        img = scipy.misc.imresize(img, (32, 32), interp="bicubic").astype(np.float32, casting='unsafe')
+        img = scipy.misc.imresize(img, (self.image_size, self.image_size), interp="bicubic").astype(np.float32, casting='unsafe')
         return self.tf_model.predict([img])

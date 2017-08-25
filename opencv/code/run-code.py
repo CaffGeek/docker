@@ -19,7 +19,7 @@ class App(object):
             print ("{}PASS! Expected {} predicted {} in {}".format(Fore.GREEN, expectedLabel, actualLabel, image))
         else:
             print ("{}FAIL! Expected {} predicted {} in {}".format(Back.RED, expectedLabel, actualLabel, image))
-            print (np.round(predicted[0], 2))
+            print ( dict(zip(self.trainer.labels, np.round(predicted[0], 2))) )
 
 app = App()
 print(app.trainer.tf_image_labels)
