@@ -8,7 +8,7 @@ init(autoreset=True)
 class App(object):
     def __init__(self):
         self.trainer = Trainer()
-        self.trainer.resize('/input', '/output')
+        self.trainer.resize('/training', '/output')
         self.trainer.train('/output')
         #self.trainer.load_model('/model/model_bowling.tflearn')
 
@@ -19,14 +19,14 @@ class App(object):
             print ("{}PASS! Expected {} predicted {} in {}".format(Fore.GREEN, expectedLabel, actualLabel, image))
         else:
             print ("{}FAIL! Expected {} predicted {} in {}".format(Back.RED, expectedLabel, actualLabel, image))
-            print ( dict(zip(self.trainer.labels, np.round(predicted[0], 2))) )
+            d = dict(zip(self.trainer.labels, np.round(predicted[0], 2)))
+            for k in sorted(d):
+                print k, d[k]
 
 app = App()
-print(app.trainer.tf_image_labels)
-app.testImage('/input/01010/bowling02101.jpg', '01010')
-app.testImage('/input/11100/bowling00701.jpg', '11100')
-app.testImage('/input/00000/bowling01051.jpg', '00000')
-app.testImage('/input/11111/bowling00101.jpg', '11111')
-app.testImage('/misc/dog.jpg', 'other')
-app.testImage('/misc/blue.png', 'other')
-app.testImage('/misc/black.png', 'other')
+app.testImage('/test/00001.PNG', '00001')
+app.testImage('/test/11100.jpg', '11100')
+app.testImage('/test/11111.jpg', '11111')
+app.testImage('/test/dog.jpg', 'other')
+app.testImage('/test/blue.png', 'other')
+app.testImage('/test/black.png', 'other')

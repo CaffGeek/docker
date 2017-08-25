@@ -5,9 +5,9 @@ RUN conda install opencv
 RUN pip install imutils tensorflow tflearn sklearn
 
 ADD ./code /code
-ADD ./input /input
+ADD ./training /training
 ADD ./model /model
-ADD ./misc /misc
+ADD ./test /test
 
 WORKDIR code
 

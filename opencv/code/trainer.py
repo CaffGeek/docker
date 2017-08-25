@@ -1,5 +1,6 @@
 import os
 import fnmatch
+import shutil
 import glob
 import re
 
@@ -24,7 +25,7 @@ import scipy
 
 class Trainer(object):
     def __init__(self):
-        self.image_size = 32
+        self.image_size = 64
         self.all_files = []
         self.total_images_count = 0
         self.labels = []
@@ -43,6 +44,10 @@ class Trainer(object):
 
     def resize(self, image_path, output_path):
         print('Resizing')
+        if os.path.exists(output_path):
+            shutil.rmtree(output_path)
+        os.makedirs(output_path)
+
         SIZE = self.image_size, self.image_size
         os.chdir(image_path)
         for root, dirnames, filenames in os.walk('.'):
@@ -114,6 +119,7 @@ class Trainer(object):
         # Randomly create extra image data by rotating and flipping images
         self.tf_img_aug = ImageAugmentation()
         #self.tf_img_aug.add_random_flip_leftright()
+        self.tf_img_aug.add_random_blur (sigma_max=5.0)
         self.tf_img_aug.add_random_rotation(max_angle=10.)
 
     def setup_nn_network(self):
