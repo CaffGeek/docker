@@ -1,6 +1,5 @@
 import os
 import fnmatch
-import shutil
 import glob
 import re
 
@@ -22,14 +21,19 @@ from tflearn.metrics import Accuracy
 from tflearn import DNN
 
 import scipy
+import cv2
 
 class Trainer(object):
     def __init__(self):
         self.image_size = 64
+        self.channels = 1
+        self.epochs = 100
+        self.learning_rate = 0.0005
+        #0.0005 original
+
         self.all_files = []
         self.total_images_count = 0
         self.labels = []
-
         self.tf_data_counter = 0
         self.tf_image_data = None
         self.tf_image_labels = None
@@ -42,13 +46,11 @@ class Trainer(object):
         self.tf_img_aug = None
         self.tf_network = None
 
-    def resize(self, image_path, output_path):
-        print('Resizing')
-        if os.path.exists(output_path):
-            shutil.rmtree(output_path)
-        os.makedirs(output_path)
+    def prepare_images(self, image_path, output_path):
+        print('Prepare Images')
+        if not os.path.exists(output_path):
+            os.makedirs(output_path)
 
-        SIZE = self.image_size, self.image_size
         os.chdir(image_path)
         for root, dirnames, filenames in os.walk('.'):
             counter = 1
@@ -58,14 +60,26 @@ class Trainer(object):
 
                 label = root.replace('./', '')
                 
-                oldFile = os.path.join(root, filename)
-                im = Image.open(oldFile)
-                im = im.resize(SIZE, Image.ANTIALIAS)
-                
+                im = self.prepare_image( os.path.join(root, filename) )                
                 newFile = os.path.join(output_path, "{}.{}.jpg".format(label, counter))
                 im.save(newFile, "JPEG", quality=70)
 
+                # gray = im.convert("L")
+                # bw = gray.point(lambda x: 0 if x<128 else 255, '1')
+                # bw.save(newFile, "JPEG", quality=70)
+
+                # edges = cv2.Canny(np.array(im), 50, 100)
+                # edgesIm = Image.fromarray(edges, 'L')
+                # edgesIm.save(newFile + '.edges.jpg', "JPEG", quality=70)
+                
                 counter = counter + 1
+
+    def prepare_image(self, file):
+        SIZE = self.image_size, self.image_size
+        im = Image.open(file)
+        im = im.resize(SIZE, Image.ANTIALIAS)
+        im = im.convert('L') #monochrome
+        return im
 
     def build_image_filenames_list(self, train_images_path):
         print('Build Image List')
@@ -85,19 +99,17 @@ class Trainer(object):
 
     def init_np_variables(self):
         print('Init Numpy Variables')
-        self.tf_image_data = np.zeros((self.total_images_count, self.image_size, self.image_size, 3), dtype='float64')
+        self.tf_image_data = np.zeros((self.total_images_count, self.image_size, self.image_size, self.channels), dtype='float64')
         self.tf_image_labels = np.zeros(self.total_images_count)
 
     def add_tf_dataset(self, list_images, labelIndex):
         print('Add TensorFlow Data Set for {}'.format(self.labels[labelIndex]))
         for image_file in list_images:
-            try:
-                img = io.imread(image_file)
-                self.tf_image_data[self.tf_data_counter] = np.array(img)
-                self.tf_image_labels[self.tf_data_counter] = labelIndex
-                self.tf_data_counter += 1
-            except:
-                continue
+            img = io.imread(image_file, as_grey=1)
+            # expand_dims to go from (x,y) -> (x,y,1)
+            self.tf_image_data[self.tf_data_counter] = np.expand_dims(np.array(img), 3) 
+            self.tf_image_labels[self.tf_data_counter] = labelIndex
+            self.tf_data_counter += 1
 
     def process_tf_dataset(self):
         print('Process TensorFlow Data Set')
@@ -118,16 +130,14 @@ class Trainer(object):
 
         # Randomly create extra image data by rotating and flipping images
         self.tf_img_aug = ImageAugmentation()
-        #self.tf_img_aug.add_random_flip_leftright()
         self.tf_img_aug.add_random_blur (sigma_max=5.0)
         self.tf_img_aug.add_random_rotation(max_angle=10.)
 
     def setup_nn_network(self):
         print('Setup neural network structure')
 
-        # our input is an image of 32 pixels high and wide with 3 channels (RGB)
         # we will also preprocess and create synthetic images
-        self.tf_network = input_data(shape=[None, self.image_size, self.image_size, 3],
+        self.tf_network = input_data(shape=[None, self.image_size, self.image_size, self.channels],
                                     data_preprocessing=self.tf_img_prep,
                                     data_augmentation=self.tf_img_aug)
 
@@ -159,7 +169,7 @@ class Trainer(object):
         accuracy = Accuracy(name="Accuracy")
         self.tf_network = regression(self.tf_network, optimizer='adam',
                                     loss='categorical_crossentropy',
-                                    learning_rate=0.0005, metric=accuracy)
+                                    learning_rate=self.learning_rate, metric=accuracy)
 
     def train(self, train_images_path):
         print('Train...')
@@ -180,7 +190,7 @@ class Trainer(object):
                        tensorboard_verbose=3,
                        checkpoint_path='/checkpoint/model_bowling.tfl.ckpt')
 
-        self.tf_model.fit(self.tf_x, self.tf_y, n_epoch=100, shuffle=True,
+        self.tf_model.fit(self.tf_x, self.tf_y, n_epoch=self.epochs, shuffle=True,
                      validation_set=(self.tf_x_test, self.tf_y_test),
                      show_metric=True, batch_size=96,
                      snapshot_epoch=True,
@@ -198,6 +208,8 @@ class Trainer(object):
         self.tf_model.load(model_path)
 
     def predict_image(self, image_path):
-        img = scipy.ndimage.imread(image_path, mode="RGB")
+        img = scipy.ndimage.imread(image_path)#, mode="L")
+        #img = img.point(lambda x: 0 if x<128 else 255, '1')
         img = scipy.misc.imresize(img, (self.image_size, self.image_size), interp="bicubic").astype(np.float32, casting='unsafe')
+        #img = np.expand_dims(img, 3) #(x,y) -> (x,y,1)
         return self.tf_model.predict([img])

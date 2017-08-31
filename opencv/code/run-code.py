@@ -8,7 +8,7 @@ init(autoreset=True)
 class App(object):
     def __init__(self):
         self.trainer = Trainer()
-        self.trainer.resize('/training', '/output')
+        self.trainer.prepare_images('/training', '/output')
         self.trainer.train('/output')
         #self.trainer.load_model('/model/model_bowling.tflearn')
 
@@ -20,12 +20,13 @@ class App(object):
         else:
             print ("{}FAIL! Expected {} predicted {} in {}".format(Back.RED, expectedLabel, actualLabel, image))
             d = dict(zip(self.trainer.labels, np.round(predicted[0], 2)))
-            for k in sorted(d):
+            for k in  sorted(d, key=d.get, reverse=True)[:3]:
                 print k, d[k]
 
 app = App()
 app.testImage('/test/00001.PNG', '00001')
 app.testImage('/test/11100.jpg', '11100')
+app.testImage('/test/11111b.PNG', '11111')
 app.testImage('/test/11111.jpg', '11111')
 app.testImage('/test/dog.jpg', 'other')
 app.testImage('/test/blue.png', 'other')
