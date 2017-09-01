@@ -9,7 +9,7 @@ RUN python -m retrain --bottleneck_dir=tf_files/bottlenecks --model_dir=tf_files
 
 #copy code and clean up windows line endings
 COPY ./code /tf
-RUN sed -i 's/\r//' test-files.sh
+RUN sed -i 's/\r//' test-files.py
 
+CMD ["python", "test-files.py"]
 #CMD ["/bin/bash"]
-CMD ["./test-files.sh"]
