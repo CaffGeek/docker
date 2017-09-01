@@ -98,9 +98,3 @@ ENV/
 # mypy
 .mypy_cache/
 
-
-#custom
-tf_files/bottlenecks/
-tf_files/images/
-tf_files/models/
-tf_files/training_summaries/
