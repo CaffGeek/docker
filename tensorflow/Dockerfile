@@ -1,5 +1,5 @@
 FROM tensorflow/tensorflow:1.1.0
-EXPOSE 80
+EXPOSE 5000
 
 COPY ./images /images
 COPY ./tf /tf
