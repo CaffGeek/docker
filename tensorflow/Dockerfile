@@ -19,8 +19,8 @@ COPY --from=trainer /tf /tf
 COPY --from=trainer /images /images
 
 WORKDIR /tf
-CMD ["python", "test-files.py"]
+#CMD ["python", "test-files.py"]
 #CMD ["/bin/bash"]
 
-#EXPOSE 5000
-#CMD ["python", "/tf/app.py"]
+EXPOSE 5000
+CMD ["python", "/tf/app.py"]
