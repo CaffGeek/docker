@@ -24,7 +24,7 @@ def upload():
 
 @app.route("/version")
 def version():
-    return "Bowling Classifier app v6!"
+    return "Bowling Classifier app v7!"
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0')
