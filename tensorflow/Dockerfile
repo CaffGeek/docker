@@ -15,8 +15,16 @@ FROM tensorflow/tensorflow:1.1.0 as flask
 
 RUN pip install Flask
 
-COPY --from=trainer /tf /tf
+COPY --from=trainer /tf/app.py /tf/app.py
+COPY --from=trainer /tf/test-files.py /tf/test-files.py
+COPY --from=trainer /tf/tf_files/retrained_labels.txt /tf/tf_files/retrained_labels.txt
+COPY --from=trainer /tf/tf_files/retrained_graph.pb /tf/tf_files/retrained_graph.pb
 COPY --from=trainer /images /images
+
+#RUN du -sh /tf
+RUN du -h /tf
+RUN ls /tf
+#RUN du -sh /images
 
 WORKDIR /tf
 #CMD ["python", "test-files.py"]

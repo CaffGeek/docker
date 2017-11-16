@@ -138,8 +138,7 @@ def main(argv):
   # load graph, which is stored in the default session
   load_graph(FLAGS.graph)
 
-  run_graph(image_data, labels, FLAGS.input_layer, FLAGS.output_layer,
-            FLAGS.num_top_predictions)
+  run_graph(image_data, labels, FLAGS.input_layer, FLAGS.output_layer, FLAGS.num_top_predictions)
 
 
 if __name__ == '__main__':
