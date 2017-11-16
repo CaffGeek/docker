@@ -105,14 +105,16 @@ def run_graph(image_data, labels, input_layer_name, output_layer_name,
     softmax_tensor = sess.graph.get_tensor_by_name(output_layer_name)
     predictions, = sess.run(softmax_tensor, {input_layer_name: image_data})
 
+    result = ""
     # Sort to show labels in order of confidence
     top_k = predictions.argsort()[-num_top_predictions:][::-1]
     for node_id in top_k:
       human_string = labels[node_id]
       score = predictions[node_id]
-      print('%s (score = %.5f)' % (human_string, score))
-
-    return 0
+      result += '%s (score = %.5f)\n\r' % (human_string, score)
+    
+    print(result)
+    return result
 
 
 def main(argv):
