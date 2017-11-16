@@ -14,7 +14,6 @@ RUN pip install Flask
 COPY --from=trainer /tf/tf_files/retrained_labels.txt /tf/tf_files/retrained_labels.txt
 COPY --from=trainer /tf/tf_files/retrained_graph.pb /tf/tf_files/retrained_graph.pb
 
-COPY ./images /images
 COPY ./code /code
 RUN sed -i 's/\r//' /code/*.*
 
