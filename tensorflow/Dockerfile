@@ -20,6 +20,4 @@ RUN sed -i 's/\r//' /code/*.*
 WORKDIR /code
 EXPOSE 5000
 
-#CMD ["python", "test-files.py"]
-#CMD ["/bin/bash"]
 CMD ["python", "app.py"]
